@@ -1,0 +1,11 @@
+Resolution:
+  Normal:
+    height: 512
+    width: 1280
+    offset_H: 256
+    offset_W: 0
+  Dafu:
+    height: 800
+    width: 800
+    offset_H: 112
+    offset_W: 220
