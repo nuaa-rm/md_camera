@@ -140,6 +140,7 @@ bool Config::setCameraInfoCallback(sensor_msgs::SetCameraInfo::Request &req,
     camera->unlock();
     res.success = status == 0;
     res.status_message = "Already write to camera!";
+    std::cout << "CAMERA CALIBRATION SUCCESS!" << std::endl;
     return true;
 }
 
@@ -163,7 +164,7 @@ void Config::init(MDCamera *_camera) {
     resolutionSub = nh.subscribe("resolution", 1, &Config::resolutionCallback, this);
     cameraInfoService = nh.advertiseService("set_camera_info", &Config::setCameraInfoCallback, this);
     cameraNamePub = nh.advertise<std_msgs::String>("camera_name", 1);
-    cameraInfoPub = nh.advertise<std_msgs::String>("camera_info", 1);
+    cameraInfoPub = nh.advertise<sensor_msgs::CameraInfo>("camera_info", 1);
     md_camera::CameraConfig initConfig;
     initConfig.AutoExp = autoExp;
     initConfig.ExpTime = expTime;
