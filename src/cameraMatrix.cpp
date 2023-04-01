@@ -37,6 +37,13 @@ sensor_msgs::CameraInfo cm2ci(CameraMatrix in, tSdkImageResolution resolution) {
     return res;
 }
 
+void updateCamInfo(sensor_msgs::CameraInfo& res, tSdkImageResolution resolution) {
+    res.roi.height = resolution.iHeight;
+    res.roi.width = resolution.iWidth;
+    res.roi.x_offset = resolution.iHOffsetFOV;
+    res.roi.y_offset = resolution.iVOffsetFOV;
+}
+
 CameraMatrix ci2cm(sensor_msgs::CameraInfo in) {
     CameraMatrix res{};
     res.fx = (float)in.K[0];

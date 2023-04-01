@@ -4,6 +4,8 @@
 
 #include <fstream>
 #include "md_camera/config.h"
+#include "md_camera/cameraMatrix.h"
+#include "md_camera/resolution.h"
 
 
 Config::Config() {
@@ -50,6 +52,7 @@ void Config::resolutionCallback(const std_msgs::StringConstPtr& msg) {
         camera->unlock();
         internalConfig.Resolution = resolution;
         server->updateConfig(internalConfig);
+        updateCamInfo(camInfo, resolutionStructCreator(resolution));
     }
 }
 
@@ -76,6 +79,7 @@ void Config::configCallback(md_camera::CameraConfig &_config, uint32_t _) {
         camera->lock();
         camera->SetResolution(resolution);
         camera->unlock();
+        updateCamInfo(camInfo, resolutionStructCreator(resolution));
     }
 
     if (_config.Gain != gain || !isInit) {
@@ -115,14 +119,28 @@ void Config::configCallback(md_camera::CameraConfig &_config, uint32_t _) {
     internalConfig = _config;
 }
 
-void Config::cameraNamePubWorker() {
+void Config::cameraPubWorker() {
     ros::Rate loopRate(5);
     while(ros::ok()) {
         std_msgs::String msg;
         msg.data = internalConfig.CameraName;
         cameraNamePub.publish(msg);
+        cameraInfoPub.publish(camInfo);
         loopRate.sleep();
     }
+}
+
+bool Config::setCameraInfoCallback(sensor_msgs::SetCameraInfo::Request &req,
+                                   sensor_msgs::SetCameraInfo::Response &res)
+{
+    camInfo = req.camera_info;
+    CameraMatrix info = ci2cm(req.camera_info);
+    camera->lock();
+    int status = camera->SetCameraMatrix(info);
+    camera->unlock();
+    res.success = status == 0;
+    res.status_message = "Already write to camera!";
+    return true;
 }
 
 void Config::save() {
@@ -138,11 +156,14 @@ void Config::save() {
 void Config::init(MDCamera *_camera) {
     camera = _camera;
     ros::NodeHandle nh("~");
+    camInfo = cm2ci(camera->GetCameraMatrix(), resolutionStructCreator(resolution));
     server = new dynamic_reconfigure::Server<md_camera::CameraConfig>;
     expSub = nh.subscribe("exposure", 1, &Config::expCallback, this);
     gainSub = nh.subscribe("gain", 1, &Config::gainCallback, this);
     resolutionSub = nh.subscribe("resolution", 1, &Config::resolutionCallback, this);
+    cameraInfoService = nh.advertiseService("set_camera_info", &Config::setCameraInfoCallback, this);
     cameraNamePub = nh.advertise<std_msgs::String>("camera_name", 1);
+    cameraInfoPub = nh.advertise<std_msgs::String>("camera_info", 1);
     md_camera::CameraConfig initConfig;
     initConfig.AutoExp = autoExp;
     initConfig.ExpTime = expTime;
@@ -162,7 +183,7 @@ void Config::init(MDCamera *_camera) {
     }
 
     isInit = true;
-    cameraNameThread = std::thread(&Config::cameraNamePubWorker, this);
+    cameraPubThread = std::thread(&Config::cameraPubWorker, this);
 }
 
 

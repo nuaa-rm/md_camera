@@ -13,6 +13,7 @@ struct __attribute__((packed)) CameraMatrix {
 };
 
 sensor_msgs::CameraInfo cm2ci(CameraMatrix in, tSdkImageResolution resolution);
+void updateCamInfo(sensor_msgs::CameraInfo& res, tSdkImageResolution resolution);
 CameraMatrix ci2cm(sensor_msgs::CameraInfo in);
 
 #endif //SRC_CAMERAMATRIX_H
