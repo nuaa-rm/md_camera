@@ -1,0 +1,6 @@
+AutoExp: false
+ExpTime: 1000
+Resolution: MaxSize
+Gain: 100
+AutoWB: false
+HWTrigger: false

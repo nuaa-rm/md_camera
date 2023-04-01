@@ -2,33 +2,37 @@
 // Created by bismarck on 23-3-30.
 //
 
+#include <thread>
 #include <md_camera/MDCamera.h>
+#include <md_camera/config.h>
 #include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/Image.h>
+#include <yaml-cpp/yaml.h>
 
 MDCamera camera;
+Config config;
 ros::Publisher image_pub;
 
-int main(int argc, char **argv) {
-    ros::init(argc,argv,"mv_camera_node");
-    ros::NodeHandle nh("~");
-    image_pub = nh.advertise<sensor_msgs::Image>("raw_img", 2);
-    camera.Init();
-    camera.LoadParameters();
-    camera.SetTriggerMode(MDCamera::hardware);
-    camera.SetExposureTime(false, 5000);
-    camera.SetResolution("640_480");
-    camera.Play();
+void getImageWorker() {
     auto lastImgTime = ros::Time::now();
+    int errorCount = 0;
 
-    while (ros::ok())
-    {
+    while (ros::ok()) {
+        if (errorCount > 10) {
+            ROS_WARN("MD camera might drop, RECONNECT.");
+            camera.Uninit();
+            ros::shutdown();
+        }
         cv::Mat raw_img;
+        camera.lock();
         camera.GetFrame(raw_img);
-        if(raw_img.empty())
-        {
-            ROS_WARN("NO IMG GOT FROM MV");
+        camera.unlock();
+        if (raw_img.empty()) {
+            ROS_WARN("NO IMG GOT FROM MD");
+            lastImgTime = ros::Time::now();
+            errorCount++;
+            continue;
         }
         std_msgs::Header img_head;
         img_head.stamp = ros::Time::now();
@@ -36,13 +40,29 @@ int main(int argc, char **argv) {
         auto msg = cv_bridge::CvImage(img_head, "bgr8", raw_img).toImageMsg();
         image_pub.publish(msg);
 
-        float diff=(ros::Time::now() - lastImgTime).toNSec()/1e9;
-        if(diff>0.5)
-        {
-            ROS_WARN("MVcamera might drop, RECONNECT.");
+        double diff = (ros::Time::now() - lastImgTime).toSec();
+        if (diff > 2) {
+            ROS_WARN("MD camera might drop, RECONNECT.");
+            camera.Uninit();
             ros::shutdown();
         }
         lastImgTime = ros::Time::now();
-        ros::spinOnce();
     }
+}
+
+int main(int argc, char **argv) {
+    ros::init(argc, argv, "md_camera_node");
+    ros::NodeHandle nh("~");
+    std::string camera_name;
+    image_pub = nh.advertise<sensor_msgs::Image>("raw_img", 2);
+    nh.getParam("camera_name", camera_name);
+    std::cout << "------------------" << camera_name << std::endl;
+    camera.Init(camera_name);
+    camera.LoadParameters();
+    config.init(&camera);
+    camera.Play();
+
+    auto getImageThread = std::thread(getImageWorker);
+    ros::spin();
+    camera.Uninit();
 }

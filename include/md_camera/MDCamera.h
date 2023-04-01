@@ -2,6 +2,7 @@
 #ifndef MVCAMERA_MVCAMERA_H
 #define MVCAMERA_MVCAMERA_H
 
+#include <mutex>
 #include <CameraApi.h>  //相机SDK头文件
 #include <opencv2/opencv.hpp>
 
@@ -21,9 +22,9 @@ private:
     unsigned char *g_pRgbBuffer[2]{nullptr, nullptr};       //处理后数据缓存区
     bool started = false;
     std::string resolution_idx{};
+    std::shared_ptr<std::mutex> mtx = make_shared<std::mutex>();
 
     void freeBuffer();
-    void Uninit();
 public:
     enum triggerMode {
         continuous = 0,
@@ -31,30 +32,31 @@ public:
     };
 
     int Init(const std::string& camera_name="");
+    void Uninit();
 
     int Play();
-    int Stop();
 
     int LoadParameters(int group=PARAMETER_TEAM_DEFAULT);
-    int SaveParameters(int group) const;
 
     int SetExposureTime(bool auto_exp, double exp_time=10000);
-    double GetExposureTime() const;
 
     int SetResolution(const std::string& idx);
-    std::string GetResolution();
 
     int SetGain(double gain);
-    double GetGain() const;
 
     int SetWBMode(bool auto_wb = true) const;
-    bool GetWBMode() const;
     int SetOnceWB() const;
+
+    std::string GetCameraName() const;
+    int SetCameraName(std::string _name) const;
 
     int SetTriggerMode(triggerMode mode) const;
     triggerMode GetTriggerMode() const;
 
     int GetFrame(Mat &frame);
+
+    void lock();
+    void unlock();
 
     MDCamera() = default;
     MDCamera(MDCamera&& other) = default;

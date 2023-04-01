@@ -1,0 +1,6 @@
+<launch>
+    <rosparam command="load" file="$(find md_camera)/params/resolution.yaml" />
+    <node pkg="md_camera" type="md_camera_node" name="md_camera_node" output="screen" respawn="true" >
+        <param name="camera_name" value="Test"/>
+    </node>
+</launch>
