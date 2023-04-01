@@ -145,12 +145,6 @@ int MDCamera::SetTriggerMode(MDCamera::triggerMode mode) const {
     return 0;
 }
 
-MDCamera::triggerMode MDCamera::GetTriggerMode() const {
-    int mode;
-    CHECK(CameraGetTriggerMode(hCamera, &mode));
-    return (MDCamera::triggerMode)mode;
-}
-
 int MDCamera::Play() {
     //获得相机的特性描述结构体。该结构体中包含了相机可设置的各种参数的范围信息。决定了相关函数的参数
     CHECK_RETURN(CameraGetCapability(hCamera, &mCapability));
@@ -193,6 +187,17 @@ int MDCamera::SetCameraName(std::string _name) const {
     char name[33] = {0};
     strcpy(name, _name.data());
     CHECK_RETURN(CameraSetFriendlyName(hCamera, name));
+    return 0;
+}
+
+CameraMatrix MDCamera::GetCameraMatrix() const {
+    CameraMatrix res{};
+    CHECK(CameraReadSN(hCamera, (uint8_t*)&res, 1));
+    return res;
+}
+
+int MDCamera::SetCameraMatrix(CameraMatrix data) const {
+    CHECK_RETURN(CameraWriteSN(hCamera, (uint8_t*)&data, 1));
     return 0;
 }
 

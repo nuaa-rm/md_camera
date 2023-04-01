@@ -56,7 +56,6 @@ int main(int argc, char **argv) {
     std::string camera_name;
     image_pub = nh.advertise<sensor_msgs::Image>("raw_img", 2);
     nh.getParam("camera_name", camera_name);
-    std::cout << "------------------" << camera_name << std::endl;
     camera.Init(camera_name);
     camera.LoadParameters();
     config.init(&camera);

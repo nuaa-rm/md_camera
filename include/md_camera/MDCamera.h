@@ -11,6 +11,10 @@
 using namespace std;
 using namespace cv;
 
+struct __attribute__((packed)) CameraMatrix {
+    float fx, fy, cx, cy, d1, d2, _1, _2;
+};
+
 class MDCamera {
 private:
     CameraHandle hCamera = 0;
@@ -50,8 +54,10 @@ public:
     std::string GetCameraName() const;
     int SetCameraName(std::string _name) const;
 
+    CameraMatrix GetCameraMatrix() const;
+    int SetCameraMatrix(CameraMatrix data) const;
+
     int SetTriggerMode(triggerMode mode) const;
-    triggerMode GetTriggerMode() const;
 
     int GetFrame(Mat &frame);
 
