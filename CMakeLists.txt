@@ -33,7 +33,14 @@ include_directories(
         ${Boost_INCLUDE_DIR}
 )
 
-add_executable(${PROJECT_NAME}_node src/main.cpp src/MDCamera.cpp src/resolution.cpp src/config.cpp)
+add_executable(
+        ${PROJECT_NAME}_node
+        src/main.cpp
+        src/MDCamera.cpp
+        src/resolution.cpp
+        src/config.cpp
+        src/cameraMatrix.cpp
+)
 
 target_link_libraries(
         ${PROJECT_NAME}_node

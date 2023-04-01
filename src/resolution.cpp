@@ -9,8 +9,16 @@ tSdkImageResolution resolutionStructCreator(const std::string& idx) {
     tSdkImageResolution res;
     if (idx == "MaxSize") {
         res.iIndex = 0;
+        res.iWidth = 1280;
+        res.iHeight = 1024;
+        res.iHOffsetFOV = 0;
+        res.iVOffsetFOV = 0;
     } else if (idx == "640_480") {
         res.iIndex = 1;
+        res.iWidth = 640;
+        res.iHeight = 480;
+        res.iHOffsetFOV = 320;
+        res.iVOffsetFOV = 272;
     } else {
         int width, height, offset_w, offset_h;
         ros::param::get("/Resolution/" + idx + "/width", width);

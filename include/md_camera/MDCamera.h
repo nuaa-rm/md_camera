@@ -5,15 +5,12 @@
 #include <mutex>
 #include <CameraApi.h>  //相机SDK头文件
 #include <opencv2/opencv.hpp>
+#include <md_camera/cameraMatrix.h>
 
 #define MAX_CAMERA_NUM 4
 
 using namespace std;
 using namespace cv;
-
-struct __attribute__((packed)) CameraMatrix {
-    float fx, fy, cx, cy, d1, d2, _1, _2;
-};
 
 class MDCamera {
 private:
