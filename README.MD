@@ -23,8 +23,8 @@
   * ~camera_info (sensor_msgs/CameraInfo)
   * ~camera_name (std_msgs/String)
 * Topic Subscribe
-  * ~exposure (std_msgs/Int32)  unit: us  range: 500~5000
-  * ~gain (std_msgs/Float64)  range: 10~300
+  * ~exposure (std_msgs/Int32)  unit: us  range: 500\~5000
+  * ~gain (std_msgs/Float64)  range: 10\~300
   * ~resolution (std_msgs/String)  must in `resolution.yaml`
 * Service
   * ~set_camera_info (sensor_msgs/setCameraInfo)
