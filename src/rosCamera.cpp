@@ -147,7 +147,7 @@ void RosCamera::getImageWorker() {
         }
         std_msgs::Header img_head;
         img_head.stamp = ros::Time::now();
-        img_head.frame_id = "robot_md_camera";
+        img_head.frame_id = frame_id;
         auto msg = cv_bridge::CvImage(img_head, "bgr8", raw_img).toImageMsg();
         imagePub.publish(msg);
 
@@ -175,6 +175,13 @@ bool RosCamera::setCameraInfoCallback(sensor_msgs::SetCameraInfo::Request &req,
     return true;
 }
 
+
+bool RosCamera::getCameraInfoCallback(md_camera::GetCameraInfo::Request &_, md_camera::GetCameraInfo::Response &res) {
+    res.camera_name = internalConfig.CameraName;
+    res.camera_info = camInfo;
+    return true;
+}
+
 void RosCamera::save() {
     yamlNode["AutoExp"] = internalConfig.AutoExp;
     yamlNode["ExpTime"] = internalConfig.ExpTime;
@@ -189,14 +196,17 @@ void RosCamera::init() {
     ros::NodeHandle nh("~");
     std::string camera_name;
     nh.getParam("camera_name", camera_name);
+    nh.getParam("frame_id", frame_id);
     camera->Init(camera_name);
     camera->LoadParameters();
     camInfo = cm2ci(camera->GetCameraMatrix(), resolutionStructCreator(internalConfig.Resolution));
+    camInfo.header.frame_id = frame_id;
     server = new dynamic_reconfigure::Server<md_camera::CameraConfig>;
     expSub = nh.subscribe("exposure", 1, &RosCamera::expCallback, this);
     gainSub = nh.subscribe("gain", 1, &RosCamera::gainCallback, this);
     resolutionSub = nh.subscribe("resolution", 1, &RosCamera::resolutionCallback, this);
-    cameraInfoService = nh.advertiseService("set_camera_info", &RosCamera::setCameraInfoCallback, this);
+    setCameraInfoService = nh.advertiseService("set_camera_info", &RosCamera::setCameraInfoCallback, this);
+    getCameraInfoService = nh.advertiseService("get_camera_info", &RosCamera::getCameraInfoCallback, this);
     cameraNamePub = nh.advertise<std_msgs::String>("camera_name", 1);
     cameraInfoPub = nh.advertise<sensor_msgs::CameraInfo>("camera_info", 1);
     imagePub = nh.advertise<sensor_msgs::Image>("raw_img", 2);
@@ -214,6 +224,3 @@ void RosCamera::init() {
     cameraPubThread = std::thread(&RosCamera::cameraPubWorker, this);
     imagePubThread = std::thread(&RosCamera::getImageWorker, this);
 }
-
-
-

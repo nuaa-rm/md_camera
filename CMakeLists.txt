@@ -7,12 +7,24 @@ find_package(
         dynamic_reconfigure
         roscpp
         sensor_msgs
+        message_generation
 )
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 add_definitions(-DCONFIG_PATH="${PROJECT_SOURCE_DIR}/params/config.yaml")
+
+add_service_files(
+        FILES
+        GetCameraInfo.srv
+)
+
+generate_messages(
+        DEPENDENCIES
+        std_msgs
+        sensor_msgs
+)
 
 generate_dynamic_reconfigure_options(
         config/Camera.cfg

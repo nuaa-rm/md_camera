@@ -16,6 +16,7 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
 #include <sensor_msgs/SetCameraInfo.h>
+#include "md_camera/GetCameraInfo.h"
 #include "md_camera/CameraConfig.h"
 
 #include "md_camera/MDCamera.h"
@@ -29,6 +30,7 @@ private:
     std::shared_ptr<MDCamera> camera = std::make_shared<MDCamera>();
     md_camera::CameraConfig internalConfig;
     sensor_msgs::CameraInfo camInfo;
+    std::string frame_id;
 
     dynamic_reconfigure::Server<md_camera::CameraConfig> *server = nullptr;
     ros::Subscriber expSub;
@@ -37,7 +39,8 @@ private:
     ros::Publisher cameraNamePub;
     ros::Publisher cameraInfoPub;
     ros::Publisher imagePub;
-    ros::ServiceServer cameraInfoService;
+    ros::ServiceServer setCameraInfoService;
+    ros::ServiceServer getCameraInfoService;
     std::thread cameraPubThread;
     std::thread imagePubThread;
 
@@ -49,6 +52,7 @@ public:
     void resolutionCallback(const std_msgs::StringConstPtr& msg);
     void configCallback(md_camera::CameraConfig& _config, uint32_t _);
     bool setCameraInfoCallback(sensor_msgs::SetCameraInfo::Request &req, sensor_msgs::SetCameraInfo::Response &res);
+    bool getCameraInfoCallback(md_camera::GetCameraInfo::Request &_, md_camera::GetCameraInfo::Response &res);
 
     void init();
     void save();
