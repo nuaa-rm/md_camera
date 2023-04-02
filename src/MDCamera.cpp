@@ -70,18 +70,18 @@ void MDCamera::Uninit() {
     started = false;
 }
 
-int MDCamera::SetExposureTime(bool auto_exp, double exp_time) {
-    if (auto_exp) {
-        CHECK_RETURN_RETRY(3, CameraSetAeState(hCamera, true));
-        printf("ENABLE AUTO EXP SUCCESS.\n");
-    } else {
-        CHECK_RETURN_RETRY(3, CameraSetAeState(hCamera, false));
-        printf("DISABLE AUTO EXP SUCCESS.\n");
-        CHECK_RETURN_RETRY(3, CameraSetExposureTime(hCamera, exp_time));
-        printf("SET EXP TIME SUCCESS.\n");
-    }
+int MDCamera::SetExposureTime(double exp_time) {
+    CHECK_RETURN_RETRY(3, CameraSetExposureTime(hCamera, exp_time));
+    printf("SET EXP TIME SUCCESS.\n");
     CHECK_RETURN(CameraGetCapability(hCamera, &mCapability));
 
+    return 0;
+}
+
+int MDCamera::SetExposureMode(bool auto_exp) {
+    CHECK_RETURN_RETRY(3, CameraSetAeState(hCamera, auto_exp));
+    printf("ENABLE AUTO EXP SUCCESS.\n");
+    CHECK_RETURN(CameraGetCapability(hCamera, &mCapability));
     return 0;
 }
 

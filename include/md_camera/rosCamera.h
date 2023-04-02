@@ -2,8 +2,8 @@
 // Created by bismarck on 23-4-1.
 //
 
-#ifndef SRC_CONFIG_H
-#define SRC_CONFIG_H
+#ifndef SRC_ROSCAMERA_H
+#define SRC_ROSCAMERA_H
 
 #include <string>
 #include <thread>
@@ -20,17 +20,13 @@
 
 #include "md_camera/MDCamera.h"
 
-class Config {
+
+class RosCamera {
 private:
     YAML::Node yamlNode;
-    bool autoExp;
-    int expTime;
-    std::string resolution;
-    double gain;
-    bool autoWB;
 
     bool isInit;
-    MDCamera* camera = nullptr;
+    std::shared_ptr<MDCamera> camera = std::make_shared<MDCamera>();
     md_camera::CameraConfig internalConfig;
     sensor_msgs::CameraInfo camInfo;
 
@@ -40,22 +36,26 @@ private:
     ros::Subscriber resolutionSub;
     ros::Publisher cameraNamePub;
     ros::Publisher cameraInfoPub;
+    ros::Publisher imagePub;
     ros::ServiceServer cameraInfoService;
     std::thread cameraPubThread;
+    std::thread imagePubThread;
+
+    void cameraPubWorker();
+    void getImageWorker();
 public:
     void expCallback(const std_msgs::Int32ConstPtr& msg);
     void gainCallback(const std_msgs::Float64ConstPtr& msg);
     void resolutionCallback(const std_msgs::StringConstPtr& msg);
     void configCallback(md_camera::CameraConfig& _config, uint32_t _);
     bool setCameraInfoCallback(sensor_msgs::SetCameraInfo::Request &req, sensor_msgs::SetCameraInfo::Response &res);
-    void cameraPubWorker();
 
-    void init(MDCamera* _camera);
+    void init();
     void save();
 
-    Config();
-    ~Config();
+    RosCamera();
+    ~RosCamera();
 };
 
 
-#endif //SRC_CONFIG_H
+#endif //SRC_ROSCAMERA_H

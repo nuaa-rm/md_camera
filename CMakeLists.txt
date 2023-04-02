@@ -38,7 +38,7 @@ add_executable(
         src/main.cpp
         src/MDCamera.cpp
         src/resolution.cpp
-        src/config.cpp
+        src/rosCamera.cpp
         src/cameraMatrix.cpp
 )
 

@@ -39,7 +39,8 @@ public:
 
     int LoadParameters(int group=PARAMETER_TEAM_DEFAULT);
 
-    int SetExposureTime(bool auto_exp, double exp_time=10000);
+    int SetExposureTime(double exp_time=10000);
+    int SetExposureMode(bool auto_exp);
 
     int SetResolution(const std::string& idx);
 
