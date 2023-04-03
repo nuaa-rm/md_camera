@@ -10,6 +10,10 @@
 * 支持预设分辨率参数（包含宽高和ROI），可以通过topic和dynamic_reconfigure直接设置为指定配置
 * 支持设置触发方式（暂时只支持连续模式和硬件触发）
 
+## 相关依赖
+* [yaml-cpp](https://github.com/jbeder/yaml-cpp)
+* [MindVision SDK](https://mindvision.com.cn/rjxz/list_12.aspx?lcid=138)
+
 ## 使用方法
 * 本仓库可以直接被子模块链接到工程中，示例：
     ```shell

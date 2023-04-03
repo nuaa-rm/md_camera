@@ -3,4 +3,6 @@
     <node pkg="md_camera" type="md_camera_node" name="md_camera_node" output="screen" respawn="true" >
         <param name="camera_name" value="Test"/>
     </node>
+    <node pkg="rqt_image_view" type="rqt_image_view" name="rqt_image_view" />
+    <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="rqt_reconfigure" />
 </launch>

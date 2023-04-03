@@ -9,9 +9,11 @@
 #include <thread>
 
 #include <yaml-cpp/yaml.h>
+#include <boost/lockfree/spsc_queue.hpp>
 
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
+#include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
@@ -21,12 +23,14 @@
 
 #include "md_camera/MDCamera.h"
 
+typedef boost::lockfree::spsc_queue<LockFrame*> FrameQueue;
+
 
 class RosCamera {
 private:
     YAML::Node yamlNode;
 
-    bool isInit;
+    bool isInit, isRecord = false;
     std::shared_ptr<MDCamera> camera = std::make_shared<MDCamera>();
     md_camera::CameraConfig internalConfig;
     sensor_msgs::CameraInfo camInfo;
@@ -36,24 +40,35 @@ private:
     ros::Subscriber expSub;
     ros::Subscriber gainSub;
     ros::Subscriber resolutionSub;
+    ros::Subscriber recordSub;
     ros::Publisher cameraNamePub;
     ros::Publisher cameraInfoPub;
     ros::Publisher imagePub;
     ros::ServiceServer setCameraInfoService;
     ros::ServiceServer getCameraInfoService;
     std::thread cameraPubThread;
+    std::thread imageGetThread;
     std::thread imagePubThread;
+    std::thread imageRecordThread;
+
+    FrameQueue publishQueue{10};
+    FrameQueue recordQueue{10};
 
     void cameraPubWorker();
     void getImageWorker();
-public:
+    void publishImageWorker();
+    void recordImageWorker();
+
     void expCallback(const std_msgs::Int32ConstPtr& msg);
     void gainCallback(const std_msgs::Float64ConstPtr& msg);
     void resolutionCallback(const std_msgs::StringConstPtr& msg);
+    void recordCallback(const std_msgs::BoolConstPtr& msg);
     void configCallback(md_camera::CameraConfig& _config, uint32_t _);
     bool setCameraInfoCallback(sensor_msgs::SetCameraInfo::Request &req, sensor_msgs::SetCameraInfo::Response &res);
     bool getCameraInfoCallback(md_camera::GetCameraInfo::Request &_, md_camera::GetCameraInfo::Response &res);
 
+    static std::string getRecordPath();
+public:
     void init();
     void save();
 

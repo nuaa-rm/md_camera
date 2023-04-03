@@ -6,6 +6,7 @@
 #include <CameraApi.h>  //相机SDK头文件
 #include <opencv2/opencv.hpp>
 #include <md_camera/cameraMatrix.h>
+#include <md_camera/LockFrame.h>
 
 #define MAX_CAMERA_NUM 4
 
@@ -17,15 +18,13 @@ private:
     CameraHandle hCamera = 0;
     int iCameraCounts = MAX_CAMERA_NUM;
     int channel = 3;
-    tSdkCameraCapbility mCapability{};                      //设备描述信息
-    tSdkFrameHead mFrameInfo{};
-    unsigned char *pbyBuffer = nullptr;
-    unsigned char *g_pRgbBuffer[2]{nullptr, nullptr};       //处理后数据缓存区
+    tSdkCameraCapbility mCapability{};
+
+    uint8_t *pbyBuffer = nullptr;
+    LockFramePool postProcessBuffers{10};
     bool started = false;
     std::string resolution_idx{};
     std::shared_ptr<std::mutex> mtx = make_shared<std::mutex>();
-
-    void freeBuffer();
 public:
     enum triggerMode {
         continuous = 0,
@@ -57,7 +56,11 @@ public:
 
     int SetTriggerMode(triggerMode mode) const;
 
-    int GetFrame(Mat &frame);
+    int GetFrame(LockFrame** frame);
+
+    int startRecord(const std::string& path) const;
+    int pushFrameToRecord(LockFrame* frame) const;
+    int stopRecord() const;
 
     void lock();
     void unlock();

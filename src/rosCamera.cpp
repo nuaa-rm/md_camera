@@ -3,6 +3,8 @@
 //
 
 #include <fstream>
+#include <ctime>
+#include <unistd.h>
 #include <cv_bridge/cv_bridge.h>
 #include "md_camera/rosCamera.h"
 #include "md_camera/cameraMatrix.h"
@@ -21,6 +23,10 @@ RosCamera::RosCamera() {
 
 RosCamera::~RosCamera() {
     delete server;
+    if (isRecord) {
+        camera->stopRecord();
+        isRecord = false;
+    }
     camera->Uninit();
 }
 
@@ -51,10 +57,29 @@ void RosCamera::resolutionCallback(const std_msgs::StringConstPtr& msg) {
     if (msg->data != internalConfig.Resolution) {
         internalConfig.Resolution = msg->data;
         camera->lock();
+        if (isRecord) {
+            camera->stopRecord();
+        }
         camera->SetResolution(msg->data);
+        if (isRecord) {
+            camera->startRecord(getRecordPath());
+        }
         camera->unlock();
         server->updateConfig(internalConfig);
         updateCamInfo(camInfo, resolutionStructCreator(msg->data));
+    }
+}
+
+void RosCamera::recordCallback(const std_msgs::BoolConstPtr &msg) {
+    if (isRecord != msg->data) {
+        camera->lock();
+        if (msg->data) {
+            camera->startRecord(getRecordPath());
+        } else {
+            camera->stopRecord();
+        }
+        camera->unlock();
+        isRecord = msg->data;
     }
 }
 
@@ -67,13 +92,19 @@ void RosCamera::configCallback(md_camera::CameraConfig &_config, uint32_t _) {
 
     if (_config.AutoExp != internalConfig.AutoExp || !isInit) {
         camera->lock();
-        camera->SetExposureTime(_config.AutoExp);
+        camera->SetExposureMode(_config.AutoExp);
         camera->unlock();
     }
 
     if (_config.Resolution != internalConfig.Resolution || !isInit) {
         camera->lock();
+        if (isRecord) {
+            camera->stopRecord();
+        }
         camera->SetResolution(_config.Resolution);
+        if (isRecord) {
+            camera->startRecord(getRecordPath());
+        }
         camera->unlock();
         updateCamInfo(camInfo, resolutionStructCreator(_config.Resolution));
     }
@@ -127,37 +158,75 @@ void RosCamera::cameraPubWorker() {
 void RosCamera::getImageWorker() {
     auto lastImgTime = ros::Time::now();
     int errorCount = 0;
+    LockFrame* frame;
     camera->Play();
 
     while (ros::ok()) {
         if (errorCount > 5) {
             ROS_WARN("MD camera might drop, RECONNECT.");
-            camera->Uninit();
-            ros::shutdown();
+//            camera->Uninit();
+//            ros::shutdown();
         }
-        cv::Mat raw_img;
         camera->lock();
-        camera->GetFrame(raw_img);
+        int status = camera->GetFrame(&frame);
         camera->unlock();
-        if (raw_img.empty()) {
+        if (status != 0) {
             ROS_WARN("NO IMG GOT FROM MD");
             lastImgTime = ros::Time::now();
             errorCount++;
             continue;
         }
-        std_msgs::Header img_head;
-        img_head.stamp = ros::Time::now();
-        img_head.frame_id = frame_id;
-        auto msg = cv_bridge::CvImage(img_head, "bgr8", raw_img).toImageMsg();
-        imagePub.publish(msg);
+        publishQueue.push(frame);
 
         double diff = (ros::Time::now() - lastImgTime).toSec();
         if (diff > 2) {
             ROS_WARN("MD camera might drop, RECONNECT.");
-            camera->Uninit();
-            ros::shutdown();
+//            camera->Uninit();
+//            ros::shutdown();
         }
+
+        usleep(50);
         lastImgTime = ros::Time::now();
+    }
+}
+
+void RosCamera::publishImageWorker() {
+    auto lastImgTime = ros::Time::now();
+    while (ros::ok()) {
+        if (publishQueue.read_available()) {
+            LockFrame* frame;
+            publishQueue.pop(frame);
+            cv::Mat raw_img = cv::Mat(
+                cv::Size(frame->headPtr()->iWidth, frame->headPtr()->iHeight),
+                frame->headPtr()->uiMediaType == CAMERA_MEDIA_TYPE_MONO8 ? CV_8UC1 : CV_8UC3,
+                frame->data()
+            );
+            std_msgs::Header img_head;
+            img_head.stamp = ros::Time::now();
+            img_head.frame_id = frame_id;
+            auto msg = cv_bridge::CvImage(img_head, "bgr8", raw_img).toImageMsg();
+            if (isRecord && (ros::Time::now() - lastImgTime).toSec() > 1. / 30.) {
+                recordQueue.push(frame);
+                lastImgTime = ros::Time::now();
+            }
+            frame->release();
+            imagePub.publish(msg);
+        } else {
+            usleep(100);
+        }
+    }
+}
+
+void RosCamera::recordImageWorker() {
+    while (ros::ok()) {
+        if (recordQueue.read_available()) {
+            LockFrame* frame;
+            recordQueue.pop(frame);
+            camera->pushFrameToRecord(frame);
+            frame->release();
+        } else {
+            usleep(1000);
+        }
     }
 }
 
@@ -205,6 +274,7 @@ void RosCamera::init() {
     expSub = nh.subscribe("exposure", 1, &RosCamera::expCallback, this);
     gainSub = nh.subscribe("gain", 1, &RosCamera::gainCallback, this);
     resolutionSub = nh.subscribe("resolution", 1, &RosCamera::resolutionCallback, this);
+    recordSub = nh.subscribe("record", 1, &RosCamera::recordCallback, this);
     setCameraInfoService = nh.advertiseService("set_camera_info", &RosCamera::setCameraInfoCallback, this);
     getCameraInfoService = nh.advertiseService("get_camera_info", &RosCamera::getCameraInfoCallback, this);
     cameraNamePub = nh.advertise<std_msgs::String>("camera_name", 1);
@@ -222,5 +292,17 @@ void RosCamera::init() {
 
     isInit = true;
     cameraPubThread = std::thread(&RosCamera::cameraPubWorker, this);
-    imagePubThread = std::thread(&RosCamera::getImageWorker, this);
+    imageGetThread = std::thread(&RosCamera::getImageWorker, this);
+    imagePubThread = std::thread(&RosCamera::publishImageWorker, this);
+    imageRecordThread = std::thread(&RosCamera::recordImageWorker, this);
+}
+
+std::string RosCamera::getRecordPath() {
+    tm stime{};
+    time_t now = time(nullptr);
+    localtime_r(&now, &stime);
+
+    char tmp[32] = {0};
+    strftime(tmp, sizeof(tmp), "%Y-%m-%d_%H-%M-%S.avi", &stime);
+    return RECORD_PATH + std::string(tmp);
 }

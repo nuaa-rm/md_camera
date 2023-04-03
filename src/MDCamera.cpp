@@ -66,7 +66,6 @@ void MDCamera::Uninit() {
         CHECK_ABORT(CameraUnInit(hCamera));
         printf("CAMERA UNINIT SUCCESS!\n");
     }
-    freeBuffer();
     started = false;
 }
 
@@ -97,12 +96,8 @@ int MDCamera::SetResolution(const std::string &idx) {
 
     resolution_idx = idx;
 
-    //初始化缓冲区
-    freeBuffer();
-    g_pRgbBuffer[0] = (unsigned char *) malloc(
-            mCapability.sResolutionRange.iHeightMax * mCapability.sResolutionRange.iWidthMax * 3);
-    g_pRgbBuffer[1] = (unsigned char *) malloc(
-            mCapability.sResolutionRange.iHeightMax * mCapability.sResolutionRange.iWidthMax * 3);
+    postProcessBuffers.resetSlotSize(mCapability.sResolutionRange.iHeightMax
+                                        * mCapability.sResolutionRange.iWidthMax * 3);
 
     CHECK_RETURN_RETRY(3, CameraGetCapability(hCamera, &mCapability));
 
@@ -159,17 +154,13 @@ int MDCamera::Play() {
 /// true if we want bgr img
 /// \return
 ///
-int MDCamera::GetFrame(Mat &frame) {
+int MDCamera::GetFrame(LockFrame** frame) {
     if (started) {
-        CHECK_RETURN(CameraGetImageBuffer(hCamera, &mFrameInfo, &pbyBuffer, 1000));
-
-        CHECK_RETURN(CameraImageProcess(hCamera, pbyBuffer, g_pRgbBuffer[0], &mFrameInfo));
-        frame = Mat(
-                cv::Size(mFrameInfo.iWidth, mFrameInfo.iHeight),
-                mFrameInfo.uiMediaType == CAMERA_MEDIA_TYPE_MONO8 ? CV_8UC1 : CV_8UC3,
-                g_pRgbBuffer[0]
-        );
+        auto slot = postProcessBuffers.getSlot();
+        CHECK_RETURN(CameraGetImageBufferPriority(hCamera, slot->headPtr(), &pbyBuffer, 1000, 1));
+        CHECK_RETURN(CameraImageProcess(hCamera, pbyBuffer, slot->data(), slot->headPtr()));
         CHECK_RETURN(CameraReleaseImageBuffer(hCamera, pbyBuffer));
+        *frame = slot;
     }
     return 0;
 }
@@ -201,18 +192,6 @@ int MDCamera::SetCameraMatrix(CameraMatrix data) const {
     return 0;
 }
 
-void MDCamera::freeBuffer() {
-    if (g_pRgbBuffer[0] != nullptr) {
-        free(g_pRgbBuffer[0]);
-        g_pRgbBuffer[0] = nullptr;
-    }
-
-    if (g_pRgbBuffer[1] != nullptr) {
-        free(g_pRgbBuffer[1]);
-        g_pRgbBuffer[1] = nullptr;
-    }
-}
-
 MDCamera::~MDCamera() {
     Uninit();
 }
@@ -227,17 +206,13 @@ MDCamera &MDCamera::operator=(MDCamera &&other) noexcept {
     iCameraCounts = other.iCameraCounts;
     channel = other.channel;
     mCapability = other.mCapability;
-    mFrameInfo = other.mFrameInfo;
     pbyBuffer = other.pbyBuffer;
-    g_pRgbBuffer[0] = other.g_pRgbBuffer[0];
-    g_pRgbBuffer[1] = other.g_pRgbBuffer[1];
+    postProcessBuffers = std::move(other.postProcessBuffers);
     started = other.started;
 
     other.hCamera = 0;
     other.started = false;
     other.pbyBuffer = nullptr;
-    other.g_pRgbBuffer[0] = nullptr;
-    other.g_pRgbBuffer[1] = nullptr;
     other.mtx = make_shared<std::mutex>();
 
     return *this;
@@ -249,4 +224,19 @@ void MDCamera::lock() {
 
 void MDCamera::unlock() {
     mtx->unlock();
+}
+
+int MDCamera::startRecord(const std::string& path) const {
+    CHECK_RETURN_RETRY(CameraInitRecord(hCamera, 1, (char*)path.c_str(), false, 20, 30), 3);
+    return 0;
+}
+
+int MDCamera::pushFrameToRecord(LockFrame *frame) const {
+    CHECK_RETURN(CameraPushFrame(hCamera, frame->data(), frame->headPtr()));
+    return 0;
+}
+
+int MDCamera::stopRecord() const {
+    CHECK_RETURN_RETRY(CameraStopRecord(hCamera), 3);
+    return 0;
 }

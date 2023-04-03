@@ -14,6 +14,7 @@ find_package(Boost REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 add_definitions(-DCONFIG_PATH="${PROJECT_SOURCE_DIR}/params/config.yaml")
+add_definitions(-DRECORD_PATH="${PROJECT_SOURCE_DIR}/record/")
 
 add_service_files(
         FILES
@@ -52,6 +53,7 @@ add_executable(
         src/resolution.cpp
         src/rosCamera.cpp
         src/cameraMatrix.cpp
+        src/LockMemory.cpp
 )
 
 target_link_libraries(
