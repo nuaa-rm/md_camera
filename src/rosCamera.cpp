@@ -210,7 +210,9 @@ void RosCamera::publishImageWorker() {
             img_head.stamp = ros::Time::now();
             img_head.frame_id = frame_id;
             auto msg = cv_bridge::CvImage(img_head, "bgr8", raw_img).toImageMsg();
-            if (isRecord && recordQueue.write_available() && (ros::Time::now() - lastImgTime).toSec() > 1. / 30.) {
+            if (isRecord && recordQueue.write_available() &&
+                (ros::Time::now() - lastImgTime).toSec() > 1. / (double)recordFps)
+            {
                 recordQueue.push(frame);
                 lastImgTime = ros::Time::now();
             } else {
@@ -283,6 +285,7 @@ void RosCamera::init() {
     internalConfig.AutoWB = yamlNode["AutoWB"].as<bool>();
     bool recordOnStart = yamlNode["Record"].as<bool>();
     fpsLimit = yamlNode["FpsLimit"].as<int>();
+    recordFps = yamlNode["RecordFps"].as<int>();
 
     camera->Init(camera_name);
     camera->LoadParameters();
@@ -333,7 +336,7 @@ void RosCamera::startRecord(const std::string& resolution) {
     cv::Size size = resolutionSizeCreator(resolution);
     std::vector<int> params{
                             VIDEOWRITER_PROP_HW_ACCELERATION, VIDEO_ACCELERATION_ANY};
-    videoWriter.open(getRecordPath(), FOUR_CC_H264, 30, size, params);
+    videoWriter.open(getRecordPath(), FOUR_CC_H264, recordFps, size, params);
     std::cout << "VIDEO RECORD START !!" << std::endl;
 }
 
