@@ -225,18 +225,3 @@ void MDCamera::lock() {
 void MDCamera::unlock() {
     mtx->unlock();
 }
-
-int MDCamera::startRecord(const std::string& path) const {
-    CHECK_RETURN_RETRY(CameraInitRecord(hCamera, 1, (char*)path.c_str(), false, 20, 30), 3);
-    return 0;
-}
-
-int MDCamera::pushFrameToRecord(LockFrame *frame) const {
-    CHECK_RETURN(CameraPushFrame(hCamera, frame->data(), frame->headPtr()));
-    return 0;
-}
-
-int MDCamera::stopRecord() const {
-    CHECK_RETURN_RETRY(CameraStopRecord(hCamera), 3);
-    return 0;
-}

@@ -4,3 +4,4 @@ Resolution: MaxSize
 Gain: 100
 AutoWB: false
 HWTrigger: false
+Record: false

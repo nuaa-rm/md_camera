@@ -30,14 +30,14 @@
   * ~exposure (std_msgs/Int32)  unit: us  range: 500\~5000
   * ~gain (std_msgs/Float64)  range: 10\~300
   * ~resolution (std_msgs/String)  must in `resolution.yaml`
+  * ~record (std_msgs/Bool)  start or stop record
 * Service
   * ~set_camera_info (sensor_msgs/setCameraInfo)
   * ~get_camera_info (ms_camera/getCameraInfo)
 * Param
   * ~camera_name (string)  set empty to any
   * ~frame_id (string)  ros frame id
+  * ~config_file (string)  default: config.yaml, The file must be in params folder
 
 ## RoadMap
-* 计划支持相机多开时使用不同的config.yaml文件
-* 计划支持录像功能
 * 计划支持帧率控制功能

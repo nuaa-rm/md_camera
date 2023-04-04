@@ -10,21 +10,14 @@
 #include "md_camera/cameraMatrix.h"
 #include "md_camera/resolution.h"
 
+#define FOUR_CC_H264 cv::VideoWriter::fourcc('H','2','6','4')
+#define FOUR_CC_MJPG cv::VideoWriter::fourcc('M','J','P','G')
 
-RosCamera::RosCamera() {
-    isInit = false;
-    yamlNode = YAML::LoadFile(CONFIG_PATH);
-    internalConfig.AutoExp = yamlNode["AutoExp"].as<bool>();
-    internalConfig.ExpTime = yamlNode["ExpTime"].as<int>();
-    internalConfig.Resolution = yamlNode["Resolution"].as<std::string>();
-    internalConfig.Gain = yamlNode["Gain"].as<double>();
-    internalConfig.AutoWB = yamlNode["AutoWB"].as<bool>();
-}
 
 RosCamera::~RosCamera() {
     delete server;
     if (isRecord) {
-        camera->stopRecord();
+        stopRecord();
         isRecord = false;
     }
     camera->Uninit();
@@ -58,11 +51,11 @@ void RosCamera::resolutionCallback(const std_msgs::StringConstPtr& msg) {
         internalConfig.Resolution = msg->data;
         camera->lock();
         if (isRecord) {
-            camera->stopRecord();
+            stopRecord();
         }
         camera->SetResolution(msg->data);
         if (isRecord) {
-            camera->startRecord(getRecordPath());
+            startRecord(msg->data);
         }
         camera->unlock();
         server->updateConfig(internalConfig);
@@ -74,9 +67,9 @@ void RosCamera::recordCallback(const std_msgs::BoolConstPtr &msg) {
     if (isRecord != msg->data) {
         camera->lock();
         if (msg->data) {
-            camera->startRecord(getRecordPath());
+            startRecord(internalConfig.Resolution);
         } else {
-            camera->stopRecord();
+            stopRecord();
         }
         camera->unlock();
         isRecord = msg->data;
@@ -99,11 +92,11 @@ void RosCamera::configCallback(md_camera::CameraConfig &_config, uint32_t _) {
     if (_config.Resolution != internalConfig.Resolution || !isInit) {
         camera->lock();
         if (isRecord) {
-            camera->stopRecord();
+            stopRecord();
         }
         camera->SetResolution(_config.Resolution);
         if (isRecord) {
-            camera->startRecord(getRecordPath());
+            startRecord(_config.Resolution);
         }
         camera->unlock();
         updateCamInfo(camInfo, resolutionStructCreator(_config.Resolution));
@@ -205,7 +198,7 @@ void RosCamera::publishImageWorker() {
             img_head.stamp = ros::Time::now();
             img_head.frame_id = frame_id;
             auto msg = cv_bridge::CvImage(img_head, "bgr8", raw_img).toImageMsg();
-            if (isRecord && (ros::Time::now() - lastImgTime).toSec() > 1. / 30.) {
+            if (isRecord && recordQueue.write_available() && (ros::Time::now() - lastImgTime).toSec() > 1. / 30.) {
                 recordQueue.push(frame);
                 lastImgTime = ros::Time::now();
             }
@@ -222,7 +215,7 @@ void RosCamera::recordImageWorker() {
         if (recordQueue.read_available()) {
             LockFrame* frame;
             recordQueue.pop(frame);
-            camera->pushFrameToRecord(frame);
+            pushRecordFrame(frame);
             frame->release();
         } else {
             usleep(1000);
@@ -264,8 +257,19 @@ void RosCamera::save() {
 void RosCamera::init() {
     ros::NodeHandle nh("~");
     std::string camera_name;
-    nh.getParam("camera_name", camera_name);
-    nh.getParam("frame_id", frame_id);
+    std::string config_file;
+    nh.param("camera_name", camera_name, std::string());
+    nh.param("frame_id", frame_id, std::string("camera"));
+    nh.param("config_file", config_file, std::string("config.yaml"));
+
+    yamlNode = YAML::LoadFile(CONFIG_PATH + config_file);
+    internalConfig.AutoExp = yamlNode["AutoExp"].as<bool>();
+    internalConfig.ExpTime = yamlNode["ExpTime"].as<int>();
+    internalConfig.Resolution = yamlNode["Resolution"].as<std::string>();
+    internalConfig.Gain = yamlNode["Gain"].as<double>();
+    internalConfig.AutoWB = yamlNode["AutoWB"].as<bool>();
+    bool recordOnStart = yamlNode["Record"].as<bool>();
+
     camera->Init(camera_name);
     camera->LoadParameters();
     camInfo = cm2ci(camera->GetCameraMatrix(), resolutionStructCreator(internalConfig.Resolution));
@@ -290,6 +294,10 @@ void RosCamera::init() {
         camera->SetTriggerMode(MDCamera::continuous);
     }
 
+    if (recordOnStart) {
+        startRecord(internalConfig.Resolution);
+    }
+
     isInit = true;
     cameraPubThread = std::thread(&RosCamera::cameraPubWorker, this);
     imageGetThread = std::thread(&RosCamera::getImageWorker, this);
@@ -303,6 +311,28 @@ std::string RosCamera::getRecordPath() {
     localtime_r(&now, &stime);
 
     char tmp[32] = {0};
-    strftime(tmp, sizeof(tmp), "%Y-%m-%d_%H-%M-%S.avi", &stime);
+    strftime(tmp, sizeof(tmp), "%Y-%m-%d_%H-%M-%S.mp4", &stime);
     return RECORD_PATH + std::string(tmp);
+}
+
+void RosCamera::startRecord(const std::string& resolution) {
+    cv::Size size = resolutionSizeCreator(resolution);
+    std::vector<int> params{
+                            VIDEOWRITER_PROP_HW_ACCELERATION, VIDEO_ACCELERATION_ANY};
+    videoWriter.open(getRecordPath(), FOUR_CC_H264, 30, size, params);
+    std::cout << "VIDEO RECORD START !!" << std::endl;
+}
+
+void RosCamera::stopRecord() {
+    videoWriter.release();
+    std::cout << "VIDEO RECORD STOP !!" << std::endl;
+}
+
+void RosCamera::pushRecordFrame(LockFrame *frame) {
+    cv::Mat raw_img = cv::Mat(
+        cv::Size(frame->headPtr()->iWidth, frame->headPtr()->iHeight),
+        frame->headPtr()->uiMediaType == CAMERA_MEDIA_TYPE_MONO8 ? CV_8UC1 : CV_8UC3,
+        frame->data()
+    );
+    videoWriter.write(raw_img);
 }

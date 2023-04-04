@@ -61,3 +61,21 @@ tSdkImageResolution resolutionStructCreator(const std::string& idx) {
     }
     return res;
 }
+
+cv::Size resolutionSizeCreator(const std::string& idx) {
+    cv::Size res;
+    if (idx == "MaxSize") {
+        res.width = 1280;
+        res.height = 1024;
+    } else if (idx == "640_480") {
+        res.width = 640;
+        res.height = 480;
+    } else {
+        int width, height;
+        ros::param::get("/Resolution/" + idx + "/width", width);
+        ros::param::get("/Resolution/" + idx + "/height", height);
+        res.width = width;
+        res.height = height;
+    }
+    return res;
+}

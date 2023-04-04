@@ -13,7 +13,7 @@ find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
-add_definitions(-DCONFIG_PATH="${PROJECT_SOURCE_DIR}/params/config.yaml")
+add_definitions(-DCONFIG_PATH="${PROJECT_SOURCE_DIR}/params/")
 add_definitions(-DRECORD_PATH="${PROJECT_SOURCE_DIR}/record/")
 
 add_service_files(

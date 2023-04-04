@@ -58,10 +58,6 @@ public:
 
     int GetFrame(LockFrame** frame);
 
-    int startRecord(const std::string& path) const;
-    int pushFrameToRecord(LockFrame* frame) const;
-    int stopRecord() const;
-
     void lock();
     void unlock();
 

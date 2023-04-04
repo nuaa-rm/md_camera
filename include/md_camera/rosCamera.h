@@ -30,7 +30,7 @@ class RosCamera {
 private:
     YAML::Node yamlNode;
 
-    bool isInit, isRecord = false;
+    bool isInit = false, isRecord = false;
     std::shared_ptr<MDCamera> camera = std::make_shared<MDCamera>();
     md_camera::CameraConfig internalConfig;
     sensor_msgs::CameraInfo camInfo;
@@ -46,13 +46,16 @@ private:
     ros::Publisher imagePub;
     ros::ServiceServer setCameraInfoService;
     ros::ServiceServer getCameraInfoService;
+
     std::thread cameraPubThread;
     std::thread imageGetThread;
     std::thread imagePubThread;
     std::thread imageRecordThread;
 
-    FrameQueue publishQueue{10};
-    FrameQueue recordQueue{10};
+    FrameQueue publishQueue{5};
+    FrameQueue recordQueue{2};
+
+    cv::VideoWriter videoWriter;
 
     void cameraPubWorker();
     void getImageWorker();
@@ -68,11 +71,13 @@ private:
     bool getCameraInfoCallback(md_camera::GetCameraInfo::Request &_, md_camera::GetCameraInfo::Response &res);
 
     static std::string getRecordPath();
+    void startRecord(const std::string& resolution);
+    void stopRecord();
+    void pushRecordFrame(LockFrame* frame);
 public:
     void init();
     void save();
 
-    RosCamera();
     ~RosCamera();
 };
 
