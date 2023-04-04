@@ -10,7 +10,7 @@
 #include "md_camera/cameraMatrix.h"
 #include "md_camera/resolution.h"
 
-#define FOUR_CC_H264 cv::VideoWriter::fourcc('H','2','6','4')
+#define FOUR_CC_X264 cv::VideoWriter::fourcc('X','2','6','4')
 #define FOUR_CC_MJPG cv::VideoWriter::fourcc('M','J','P','G')
 
 
@@ -328,7 +328,7 @@ std::string RosCamera::getRecordPath() {
     localtime_r(&now, &stime);
 
     char tmp[32] = {0};
-    strftime(tmp, sizeof(tmp), "%Y-%m-%d_%H-%M-%S.mp4", &stime);
+    strftime(tmp, sizeof(tmp), "%Y-%m-%d_%H-%M-%S.mkv", &stime);
     return RECORD_PATH + std::string(tmp);
 }
 
@@ -336,7 +336,7 @@ void RosCamera::startRecord(const std::string& resolution) {
     cv::Size size = resolutionSizeCreator(resolution);
     std::vector<int> params{
                             VIDEOWRITER_PROP_HW_ACCELERATION, VIDEO_ACCELERATION_ANY};
-    videoWriter.open(getRecordPath(), FOUR_CC_H264, recordFps, size, params);
+    videoWriter.open(getRecordPath(), FOUR_CC_X264, recordFps, size, params);
     std::cout << "VIDEO RECORD START !!" << std::endl;
 }
 
