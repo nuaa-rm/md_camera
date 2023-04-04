@@ -157,6 +157,9 @@ int MDCamera::Play() {
 int MDCamera::GetFrame(LockFrame** frame) {
     if (started) {
         auto slot = postProcessBuffers.getSlot();
+        if (slot == nullptr) {
+            return -1;
+        }
         CHECK_RETURN(CameraGetImageBufferPriority(hCamera, slot->headPtr(), &pbyBuffer, 1000, 1));
         CHECK_RETURN(CameraImageProcess(hCamera, pbyBuffer, slot->data(), slot->headPtr()));
         CHECK_RETURN(CameraReleaseImageBuffer(hCamera, pbyBuffer));
