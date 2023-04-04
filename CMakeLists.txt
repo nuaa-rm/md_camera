@@ -53,7 +53,7 @@ add_executable(
         src/resolution.cpp
         src/rosCamera.cpp
         src/cameraMatrix.cpp
-        src/LockMemory.cpp
+        src/LockFrame.cpp
 )
 
 target_link_libraries(
