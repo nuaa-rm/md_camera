@@ -152,6 +152,11 @@ void RosCamera::getImageWorker() {
     auto lastImgTime = ros::Time::now();
     int errorCount = 0;
     LockFrame* frame;
+    int rate = fpsLimit;
+    if (rate == 0) {
+        rate = 300;
+    }
+    ros::Rate loop_rate(rate);
     camera->Play();
 
     while (ros::ok()) {
@@ -178,7 +183,14 @@ void RosCamera::getImageWorker() {
 //            ros::shutdown();
         }
 
-        usleep(50);
+        if (fpsLimit != 0) {
+            if(!loop_rate.sleep()) {
+                ROS_WARN("Camera Image Got Slower Than FpsLimit !!");
+                usleep(50);
+            }
+        } else {
+            usleep(50);
+        }
         lastImgTime = ros::Time::now();
     }
 }
@@ -201,8 +213,9 @@ void RosCamera::publishImageWorker() {
             if (isRecord && recordQueue.write_available() && (ros::Time::now() - lastImgTime).toSec() > 1. / 30.) {
                 recordQueue.push(frame);
                 lastImgTime = ros::Time::now();
+            } else {
+                frame->release();
             }
-            frame->release();
             imagePub.publish(msg);
         } else {
             usleep(100);
@@ -269,6 +282,7 @@ void RosCamera::init() {
     internalConfig.Gain = yamlNode["Gain"].as<double>();
     internalConfig.AutoWB = yamlNode["AutoWB"].as<bool>();
     bool recordOnStart = yamlNode["Record"].as<bool>();
+    fpsLimit = yamlNode["FpsLimit"].as<int>();
 
     camera->Init(camera_name);
     camera->LoadParameters();

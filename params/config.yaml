@@ -5,3 +5,4 @@ Gain: 100
 AutoWB: false
 HWTrigger: false
 Record: false
+FpsLimit: 0

@@ -38,6 +38,3 @@
   * ~camera_name (string)  set empty to any
   * ~frame_id (string)  ros frame id
   * ~config_file (string)  default: config.yaml, The file must be in params folder
-
-## RoadMap
-* 计划支持帧率控制功能
