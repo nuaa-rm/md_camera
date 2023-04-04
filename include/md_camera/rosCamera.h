@@ -53,8 +53,8 @@ private:
     std::thread imagePubThread;
     std::thread imageRecordThread;
 
-    FrameQueue publishQueue{5};
-    FrameQueue recordQueue{2};
+    FrameQueue publishQueue{10};
+    FrameQueue recordQueue{10};
 
     cv::VideoWriter videoWriter;
 

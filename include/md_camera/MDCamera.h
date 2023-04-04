@@ -21,7 +21,7 @@ private:
     tSdkCameraCapbility mCapability{};
 
     uint8_t *pbyBuffer = nullptr;
-    LockFramePool postProcessBuffers{10};
+    LockFramePool postProcessBuffers{25};
     bool started = false;
     std::string resolution_idx{};
     std::shared_ptr<std::mutex> mtx = make_shared<std::mutex>();
