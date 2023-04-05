@@ -334,8 +334,7 @@ std::string RosCamera::getRecordPath() {
 
 void RosCamera::startRecord(const std::string& resolution) {
     cv::Size size = resolutionSizeCreator(resolution);
-    std::vector<int> params{
-                            VIDEOWRITER_PROP_HW_ACCELERATION, VIDEO_ACCELERATION_ANY};
+    std::vector<int> params{VIDEOWRITER_PROP_HW_ACCELERATION, VIDEO_ACCELERATION_ANY};
     videoWriter.open(getRecordPath(), FOUR_CC_X264, recordFps, size, params);
     std::cout << "VIDEO RECORD START !!" << std::endl;
 }

@@ -3,6 +3,7 @@ project(md_camera)
 
 find_package(
         catkin REQUIRED COMPONENTS
+        topic_tools
         cv_bridge
         dynamic_reconfigure
         roscpp
@@ -54,6 +55,8 @@ add_executable(
         src/rosCamera.cpp
         src/cameraMatrix.cpp
         src/LockFrame.cpp
+        src/Recorder.cpp
+        src/TopicRecorder.cpp
 )
 
 target_link_libraries(
