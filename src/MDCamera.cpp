@@ -60,10 +60,10 @@ int MDCamera::Init(const std::string& camera_name) {
     return 0;
 }
 
-void MDCamera::Uninit() {
+int MDCamera::Uninit() {
     if (started) {
         printf("Uninit...\n");
-        CHECK_ABORT_RETRY(CameraUnInit(hCamera), 3);
+        CHECK_RETURN_RETRY(CameraUnInit(hCamera), 3);
         printf("CAMERA UNINIT SUCCESS!\n");
     }
     started = false;

@@ -57,9 +57,14 @@ void Recorder::startRecord(const std::string &resolution, int recordFps, const s
     }
     std::cout << "VIDEO RECORD START !!" << std::endl;
     std::cout << "Video save to " << now_path << std::endl;
+    recording = true;
 }
 
 void Recorder::stopRecord() {
+    if (!recording) {
+        std::cout << "NOT RECORDING" << std::endl;
+        return;
+    }
     videoWriter.release();
     YAML::Node node;
     for (int i = 0; i < topics.size(); i++) {
@@ -75,11 +80,13 @@ void Recorder::stopRecord() {
     node["cameraMatrix"] = camInfo;
     node["frameId"] = frame_id;
     node["cameraName"] = camera_name;
-    topics.clear();
     std::ofstream file(now_path + "info.yaml");
+    std::bad_array_new_length e;
     file << node;
     file.close();
+    topics.clear();
     std::cout << "VIDEO RECORD STOP !!" << std::endl;
+    recording = false;
 }
 
 void Recorder::pushRecordFrame(LockFrame *frame) {

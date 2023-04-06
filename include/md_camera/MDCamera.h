@@ -32,7 +32,7 @@ public:
     };
 
     int Init(const std::string& camera_name="");
-    void Uninit();
+    int Uninit();
 
     int Play();
 

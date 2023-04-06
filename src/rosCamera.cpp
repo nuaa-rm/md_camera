@@ -12,11 +12,6 @@
 
 RosCamera::~RosCamera() {
     delete server;
-    if (isRecord) {
-        stopRecord();
-        isRecord = false;
-    }
-    camera->Uninit();
     if (cameraPubThread.joinable()) {
         cameraPubThread.join();
     }
@@ -29,6 +24,10 @@ RosCamera::~RosCamera() {
     if (imageRecordThread.joinable()) {
         imageRecordThread.join();
     }
+    if (isRecord) {
+        stopRecord();
+    }
+    camera->Uninit();
 }
 
 void RosCamera::expCallback(const std_msgs::Int32ConstPtr& msg) {

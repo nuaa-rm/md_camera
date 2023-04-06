@@ -21,6 +21,7 @@ private:
     std::string path, now_path, frame_id, camera_name;
     sensor_msgs::CameraInfo camInfo;
     size_t frame_count{0};
+    bool recording{false};
 public:
     explicit Recorder(const std::string& _path);
     ~Recorder();

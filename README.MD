@@ -38,3 +38,6 @@
   * ~camera_name (string)  set empty to any
   * ~frame_id (string)  ros frame id
   * ~config_file (string)  default: config.yaml, The file must be in params folder
+
+## 已知问题
+* 录制时直接退出程序无法正常保存主yaml文件，我实在是找不到问题在哪儿了
