@@ -29,7 +29,9 @@ void Player::init() {
     frameRate = node["frameRate"].as<int>();
 
     for (const auto& topicNode: node["topics"]) {
-        topics.emplace_back(topicNode.as<TopicProperties>(), TopicRecorder::Mode::READ);
+        auto config = topicNode.as<TopicProperties>();
+        config.file_path = path + config.file_path;
+        topics.emplace_back(config, TopicRecorder::Mode::READ);
     }
 
     cameraNamePub = nh.advertise<std_msgs::String>("camera_name", 1);
@@ -80,7 +82,9 @@ void Player::imagePubWorker() {
         bool status = capture.read(image);
         if (!status) {
             std::cout << "Video Play to End. Replay !!!" << std::endl;
+            std::fill(next_pub.begin(), next_pub.end(), 0);
             reset();
+            continue;
         }
         img_head.stamp = ros::Time::now();
         auto msg = cv_bridge::CvImage(img_head, "bgr8", image).toImageMsg();

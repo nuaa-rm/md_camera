@@ -2,5 +2,6 @@
     <node pkg="md_camera" type="video_pub_node" name="md_camera_node" output="screen" respawn="true" >
         <param name="record_dir" value="2023-04-06_19-51-52"/>
     </node>
+<!--    <param name="md_camera_node/record_dir" value="2023-04-06_19-51-52" />-->
     <node pkg="rqt_image_view" type="rqt_image_view" name="rqt_image_view" />
 </launch>

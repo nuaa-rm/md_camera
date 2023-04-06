@@ -78,10 +78,14 @@ size_t TopicRecorder::publish() {
         file_in.read((char*)&last_head, sizeof(Head));
         buffer = new char[last_head.size+32];
     } else {
+        file_in.read(buffer, (long)last_head.size);
         stream = ros::serialization::OStream((uint8_t*)buffer, last_head.size);
         msg.read(stream);
         pub.publish(msg);
         file_in.read((char*)&last_head, sizeof(Head));
+        if (file_in.eof()) {
+            return 1e19;
+        }
     }
     return last_head.frame;
 }
