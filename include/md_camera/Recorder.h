@@ -11,20 +11,23 @@
 #include <yaml-cpp/yaml.h>
 #include "md_camera/TopicRecorder.h"
 #include "md_camera/LockFrame.h"
+#include "md_camera/cameraMatrix.h"
 
 
 class Recorder {
 private:
     cv::VideoWriter videoWriter;
     std::vector<TopicRecorder> topics;
-    std::string path;
+    std::string path, now_path;
+    CameraMatrix camMat{};
     size_t frame_count{0};
 public:
-    Recorder() = default;
+    explicit Recorder(const std::string& _path);
+    ~Recorder();
 
-    static std::string getRecordPath();
+    std::string getRecordPath();
 
-    void startRecord(const std::string& resolution, int recordFps);
+    void startRecord(const std::string& resolution, int recordFps, const sensor_msgs::CameraInfo& camInfo);
     void stopRecord();
     void pushRecordFrame(LockFrame* frame);
 };

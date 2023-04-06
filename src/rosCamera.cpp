@@ -3,15 +3,11 @@
 //
 
 #include <fstream>
-#include <ctime>
 #include <unistd.h>
 #include <cv_bridge/cv_bridge.h>
 #include "md_camera/rosCamera.h"
 #include "md_camera/cameraMatrix.h"
 #include "md_camera/resolution.h"
-
-#define FOUR_CC_X264 cv::VideoWriter::fourcc('X','2','6','4')
-#define FOUR_CC_MJPG cv::VideoWriter::fourcc('M','J','P','G')
 
 
 RosCamera::~RosCamera() {
@@ -230,7 +226,7 @@ void RosCamera::recordImageWorker() {
         if (recordQueue.read_available()) {
             LockFrame* frame;
             recordQueue.pop(frame);
-            pushRecordFrame(frame);
+            recorder.pushRecordFrame(frame);
             frame->release();
         } else {
             usleep(1000);
@@ -322,33 +318,12 @@ void RosCamera::init() {
     imageRecordThread = std::thread(&RosCamera::recordImageWorker, this);
 }
 
-std::string RosCamera::getRecordPath() {
-    tm stime{};
-    time_t now = time(nullptr);
-    localtime_r(&now, &stime);
-
-    char tmp[32] = {0};
-    strftime(tmp, sizeof(tmp), "%Y-%m-%d_%H-%M-%S.mkv", &stime);
-    return RECORD_PATH + std::string(tmp);
-}
-
-void RosCamera::startRecord(const std::string& resolution) {
-    cv::Size size = resolutionSizeCreator(resolution);
-    std::vector<int> params{VIDEOWRITER_PROP_HW_ACCELERATION, VIDEO_ACCELERATION_ANY};
-    videoWriter.open(getRecordPath(), FOUR_CC_X264, recordFps, size, params);
-    std::cout << "VIDEO RECORD START !!" << std::endl;
+void RosCamera::startRecord(const string &resolution) {
+    recorder.startRecord(resolution, recordFps, camInfo);
+    isRecord = true;
 }
 
 void RosCamera::stopRecord() {
-    videoWriter.release();
-    std::cout << "VIDEO RECORD STOP !!" << std::endl;
-}
-
-void RosCamera::pushRecordFrame(LockFrame *frame) {
-    cv::Mat raw_img = cv::Mat(
-        cv::Size(frame->headPtr()->iWidth, frame->headPtr()->iHeight),
-        frame->headPtr()->uiMediaType == CAMERA_MEDIA_TYPE_MONO8 ? CV_8UC1 : CV_8UC3,
-        frame->data()
-    );
-    videoWriter.write(raw_img);
+    isRecord = false;
+    recorder.stopRecord();
 }

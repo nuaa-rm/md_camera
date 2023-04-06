@@ -22,6 +22,7 @@
 #include "md_camera/CameraConfig.h"
 
 #include "md_camera/MDCamera.h"
+#include "md_camera/Recorder.h"
 
 typedef boost::lockfree::spsc_queue<LockFrame*> FrameQueue;
 
@@ -56,12 +57,15 @@ private:
     FrameQueue publishQueue{10};
     FrameQueue recordQueue{10};
 
-    cv::VideoWriter videoWriter;
+    Recorder recorder{RECORD_PATH};
 
     void cameraPubWorker();
     void getImageWorker();
     void publishImageWorker();
     void recordImageWorker();
+
+    void startRecord(const std::string& resolution);
+    void stopRecord();
 
     void expCallback(const std_msgs::Int32ConstPtr& msg);
     void gainCallback(const std_msgs::Float64ConstPtr& msg);
@@ -70,11 +74,6 @@ private:
     void configCallback(md_camera::CameraConfig& _config, uint32_t _);
     bool setCameraInfoCallback(sensor_msgs::SetCameraInfo::Request &req, sensor_msgs::SetCameraInfo::Response &res);
     bool getCameraInfoCallback(md_camera::GetCameraInfo::Request &_, md_camera::GetCameraInfo::Response &res);
-
-    static std::string getRecordPath();
-    void startRecord(const std::string& resolution);
-    void stopRecord();
-    void pushRecordFrame(LockFrame* frame);
 public:
     void init();
     void save();

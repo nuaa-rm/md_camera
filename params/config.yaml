@@ -4,6 +4,6 @@ Resolution: MaxSize
 Gain: 100
 AutoWB: false
 HWTrigger: false
-Record: false
+Record: true
 FpsLimit: 0
 RecordFps: 160

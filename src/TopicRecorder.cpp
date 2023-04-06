@@ -34,20 +34,22 @@ void TopicRecorder::init(const TopicProperties& info, TopicRecorder::Mode mode) 
     if (mode == Mode::READ) {
         msg.morph(info.md5, info.datatype, info.msg_def, "");
         pub = msg.advertise(nh, info.topic_name, 1);
-        file_in = std::ifstream(info.file_path, std::ios::in | std::ios::binary);
+        file_in.open(info.file_path, std::ios::in | std::ios::binary);
     } else if (mode == Mode::WRITE) {
         sub = nh.subscribe(info.topic_name, 1, &TopicRecorder::callback, this);
-        file_out = std::ofstream(info.file_path, std::ios::in | std::ios::binary);
+        file_out.open(info.file_path, std::ios::out | std::ios::binary);
     }
 }
 
 void TopicRecorder::close() {
-    delete[] buffer;
     sub.shutdown();
-    if (file_in.is_open()) {
+    delete[] buffer;
+    buffer = nullptr;
+    stream = ros::serialization::OStream(nullptr, 0);
+    if (file_in) {
         file_in.close();
     }
-    if (file_out.is_open()) {
+    if (file_out) {
         file_out.close();
     }
 }
@@ -68,11 +70,12 @@ size_t TopicRecorder::publish() {
     if (buffer == nullptr) {
         file_in.read((char*)&last_head, sizeof(Head));
         buffer = new char[last_head.size+32];
+    } else {
+        stream = ros::serialization::OStream((uint8_t*)buffer, last_head.size);
+        msg.read(stream);
+        pub.publish(msg);
+        file_in.read((char*)&last_head, sizeof(Head));
     }
-    stream = ros::serialization::OStream((uint8_t*)buffer, last_head.size);
-    msg.read(stream);
-    pub.publish(msg);
-    file_in.read((char*)&last_head, sizeof(Head));
     return last_head.frame;
 }
 
