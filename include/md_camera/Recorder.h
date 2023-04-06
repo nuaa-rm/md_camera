@@ -22,6 +22,7 @@ private:
     std::string path, now_path, frame_id, camera_name;
     sensor_msgs::CameraInfo camInfo;
     size_t frame_count{0};
+    int frame_rate;
     bool recording{false};
 
     void saveYaml();

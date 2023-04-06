@@ -35,9 +35,6 @@ struct convert<TopicProperties> {
   }
 
   static bool decode(const Node& node, TopicProperties& info) {
-    if(!node.IsSequence() || node.size() != 5) {
-      return false;
-    }
     info.topic_name = node["TopicName"].as<std::string>();
     info.file_path = node["FilePath"].as<std::string>();
     info.datatype = node["Datatype"].as<std::string>();
@@ -77,6 +74,7 @@ public:
     };
 
     TopicRecorder() = default;
+    TopicRecorder(const TopicProperties& info, TopicRecorder::Mode mode);
     TopicRecorder(TopicRecorder&) = delete;
     TopicRecorder(TopicRecorder&&) noexcept ;
     ~TopicRecorder();

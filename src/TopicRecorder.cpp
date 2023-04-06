@@ -7,6 +7,10 @@
 #include "md_camera/TopicRecorder.h"
 
 
+TopicRecorder::TopicRecorder(const TopicProperties &info, TopicRecorder::Mode mode) {
+    init(info, mode);
+}
+
 TopicRecorder::~TopicRecorder() {
     close();
 }

@@ -20,9 +20,10 @@ private:
     cv::VideoCapture capture;
     std::vector<TopicRecorder> topics;
     sensor_msgs::CameraInfo camInfo;
-    size_t frameCount{0}, maxFrameCount{0};
+    size_t frameCount{0};
     std::string video_path, frameId;
     std::string path, cameraName;
+    int frameRate;
 
     ros::Publisher cameraInfoPub;
     ros::Publisher cameraNamePub;

@@ -12,7 +12,7 @@
 
 #ifdef X264
 #define FOUR_CC cv::VideoWriter::fourcc('X','2','6','4')
-#define SUFFIX ".mkv"
+#define SUFFIX ".mp4"
 #endif
 
 #ifdef MJPG
@@ -42,6 +42,7 @@ void Recorder::startRecord(const std::string &resolution, int recordFps, const s
     now_path = getRecordPath();
     camInfo = _camInfo;
     frame_id = _frame_id;
+    frame_rate = recordFps;
     camera_name = _camera_name;
     cv::Size size = resolutionSizeCreator(resolution);
     std::vector<int> params{cv::VIDEOWRITER_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY};
@@ -106,10 +107,10 @@ void Recorder::saveYaml() {
         }
     }
     node["video"] = std::string("video") + SUFFIX;
-    node["frameCount"] = frame_count;
     node["cameraMatrix"] = camInfo;
     node["frameId"] = frame_id;
     node["cameraName"] = camera_name;
+    node["frameRate"] = frame_rate;
     std::ofstream file(now_path + "info.yaml");
     file << node;
     file.close();
