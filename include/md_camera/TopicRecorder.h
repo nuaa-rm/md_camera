@@ -57,6 +57,8 @@ private:
     ros::Publisher pub;
     ros::Subscriber sub;
 
+    std::function<void()> saveFunc;
+
     std::ifstream file_in;
     std::ofstream file_out;
     std::string file_path;
@@ -75,12 +77,12 @@ public:
     };
 
     TopicRecorder() = default;
-    TopicRecorder(const TopicProperties& info, TopicRecorder::Mode mode);
     TopicRecorder(TopicRecorder&) = delete;
     TopicRecorder(TopicRecorder&&) noexcept ;
     ~TopicRecorder();
 
-    void init(const TopicProperties& info, TopicRecorder::Mode mode);
+    void init(const TopicProperties& info, TopicRecorder::Mode mode,
+              std::function<void()> func=std::function<void()>());
     void reset();
     void close();
     size_t publish();

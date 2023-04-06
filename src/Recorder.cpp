@@ -39,7 +39,6 @@ void Recorder::startRecord(const std::string &resolution, int recordFps, const s
                            const std::string& _frame_id, const std::string& _camera_name)
 {
     ros::NodeHandle nh("~");
-    XmlRpc::XmlRpcValue v;
     now_path = getRecordPath();
     camInfo = _camInfo;
     frame_id = _frame_id;
@@ -47,14 +46,19 @@ void Recorder::startRecord(const std::string &resolution, int recordFps, const s
     cv::Size size = resolutionSizeCreator(resolution);
     std::vector<int> params{cv::VIDEOWRITER_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY};
     videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size, params);
+    auto saveFunc = [this](){
+        this->saveYaml();
+    };
     if (nh.hasParam("record_topics")) {
+        XmlRpc::XmlRpcValue v;
         nh.getParam("record_topics", v);
         topics.resize(v.size());
         for (int i = 0; i < v.size(); i++) {
             topics[i].init(TopicProperties{v[i], now_path + "topic_" + std::to_string(i) + ".mbg"},
-                           TopicRecorder::Mode::WRITE);
+                           TopicRecorder::Mode::WRITE, saveFunc);
         }
     }
+    saveYaml();
     std::cout << "VIDEO RECORD START !!" << std::endl;
     std::cout << "Video save to " << now_path << std::endl;
     recording = true;
@@ -66,24 +70,6 @@ void Recorder::stopRecord() {
         return;
     }
     videoWriter.release();
-    YAML::Node node;
-    for (int i = 0; i < topics.size(); i++) {
-        auto info = topics[i].getInfo();
-        topics[i].close();
-        if (!info.md5.empty()) {
-            info.file_path = "topic_" + std::to_string(i) + ".mbg";
-            node["topics"].push_back(info);
-        }
-    }
-    node["video"] = std::string("video") + SUFFIX;
-    node["frameCount"] = frame_count;
-    node["cameraMatrix"] = camInfo;
-    node["frameId"] = frame_id;
-    node["cameraName"] = camera_name;
-    std::ofstream file(now_path + "info.yaml");
-    std::bad_array_new_length e;
-    file << node;
-    file.close();
     topics.clear();
     std::cout << "VIDEO RECORD STOP !!" << std::endl;
     recording = false;
@@ -108,4 +94,24 @@ Recorder::Recorder(const std::string& _path) {
 
 Recorder::~Recorder() {
     stopRecord();
+}
+
+void Recorder::saveYaml() {
+    YAML::Node node;
+    for (int i = 0; i < topics.size(); i++) {
+        auto info = topics[i].getInfo();
+        if (!info.md5.empty()) {
+            info.file_path = "topic_" + std::to_string(i) + ".mbg";
+            node["topics"].push_back(info);
+        }
+    }
+    node["video"] = std::string("video") + SUFFIX;
+    node["frameCount"] = frame_count;
+    node["cameraMatrix"] = camInfo;
+    node["frameId"] = frame_id;
+    node["cameraName"] = camera_name;
+    std::ofstream file(now_path + "info.yaml");
+    file << node;
+    file.close();
+    std::cout << "RECORD YAML SAVED !!" << std::endl;
 }

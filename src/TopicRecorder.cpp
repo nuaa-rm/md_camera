@@ -2,12 +2,10 @@
 // Created by bismarck on 23-4-5.
 //
 
+#include <utility>
+
 #include "md_camera/TopicRecorder.h"
 
-
-TopicRecorder::TopicRecorder(const TopicProperties& info, TopicRecorder::Mode mode) {
-    init(info, mode);
-}
 
 TopicRecorder::~TopicRecorder() {
     close();
@@ -29,9 +27,10 @@ TopicRecorder::TopicRecorder(TopicRecorder && other) noexcept {
     other.stream = ros::serialization::OStream(nullptr, 0);
 }
 
-void TopicRecorder::init(const TopicProperties& info, TopicRecorder::Mode mode) {
+void TopicRecorder::init(const TopicProperties& info, TopicRecorder::Mode mode, std::function<void()> func) {
     ros::NodeHandle nh;
     file_path = info.file_path;
+    saveFunc = std::move(func);
     if (mode == Mode::READ) {
         msg.morph(info.md5, info.datatype, info.msg_def, "");
         pub = msg.advertise(nh, info.topic_name, 1);
@@ -60,6 +59,9 @@ void TopicRecorder::callback(const topic_tools::ShapeShifter::ConstPtr &_msg) {
         buffer = new char[_msg->size()+32];
         msg = *_msg;
         stream = ros::serialization::OStream((uint8_t*)buffer, msg.size()+32);
+        if (saveFunc) {
+            saveFunc();
+        }
     }
     _msg->write(stream);
     Head head{frame_count, _msg->size()};

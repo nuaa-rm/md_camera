@@ -6,6 +6,7 @@
 #define SRC_RECORDER_H
 
 #include <vector>
+#include <functional>
 #include <ros/ros.h>
 #include <opencv2/opencv.hpp>
 #include <yaml-cpp/yaml.h>
@@ -22,11 +23,14 @@ private:
     sensor_msgs::CameraInfo camInfo;
     size_t frame_count{0};
     bool recording{false};
+
+    void saveYaml();
 public:
     explicit Recorder(const std::string& _path);
     ~Recorder();
 
     std::string getRecordPath();
+    std::function<void()> getSaveFunc();
 
     void startRecord(const std::string& resolution, int recordFps, const sensor_msgs::CameraInfo& _camInfo,
                      const std::string& _frame_id, const std::string& _camera_name);
