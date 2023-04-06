@@ -9,7 +9,6 @@ RosCamera camera;
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "md_camera_node");
-    ros::NodeHandle nh("~");
     camera.init();
 
     ros::spin();

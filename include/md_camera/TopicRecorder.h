@@ -59,6 +59,7 @@ private:
 
     std::ifstream file_in;
     std::ofstream file_out;
+    std::string file_path;
 
     char* buffer = nullptr;
     topic_tools::ShapeShifter msg;
@@ -80,6 +81,7 @@ public:
     ~TopicRecorder();
 
     void init(const TopicProperties& info, TopicRecorder::Mode mode);
+    void reset();
     void close();
     size_t publish();
     TopicProperties getInfo();

@@ -31,6 +31,7 @@ TopicRecorder::TopicRecorder(TopicRecorder && other) noexcept {
 
 void TopicRecorder::init(const TopicProperties& info, TopicRecorder::Mode mode) {
     ros::NodeHandle nh;
+    file_path = info.file_path;
     if (mode == Mode::READ) {
         msg.morph(info.md5, info.datatype, info.msg_def, "");
         pub = msg.advertise(nh, info.topic_name, 1);
@@ -46,10 +47,10 @@ void TopicRecorder::close() {
     delete[] buffer;
     buffer = nullptr;
     stream = ros::serialization::OStream(nullptr, 0);
-    if (file_in) {
+    if (file_in.is_open()) {
         file_in.close();
     }
-    if (file_out) {
+    if (file_out.is_open()) {
         file_out.close();
     }
 }
@@ -91,4 +92,20 @@ TopicProperties TopicRecorder::getInfo() {
 
 void TopicRecorder::setFrameCount(size_t _frame_count) {
     frame_count = _frame_count;
+}
+
+void TopicRecorder::reset() {
+    sub.shutdown();
+    delete[] buffer;
+    buffer = nullptr;
+    stream = ros::serialization::OStream(nullptr, 0);
+    if (file_in.is_open()) {
+        file_in.close();
+        file_in.open(file_path, std::ios::in | std::ios::binary);
+    }
+    if (file_out.is_open()) {
+        file_out.close();
+        file_out.open(file_path, std::ios::out | std::ios::binary);
+    }
+    frame_count = 0;
 }

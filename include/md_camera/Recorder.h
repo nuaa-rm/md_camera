@@ -18,8 +18,8 @@ class Recorder {
 private:
     cv::VideoWriter videoWriter;
     std::vector<TopicRecorder> topics;
-    std::string path, now_path;
-    CameraMatrix camMat{};
+    std::string path, now_path, frame_id, camera_name;
+    sensor_msgs::CameraInfo camInfo;
     size_t frame_count{0};
 public:
     explicit Recorder(const std::string& _path);
@@ -27,7 +27,8 @@ public:
 
     std::string getRecordPath();
 
-    void startRecord(const std::string& resolution, int recordFps, const sensor_msgs::CameraInfo& camInfo);
+    void startRecord(const std::string& resolution, int recordFps, const sensor_msgs::CameraInfo& _camInfo,
+                     const std::string& _frame_id, const std::string& _camera_name);
     void stopRecord();
     void pushRecordFrame(LockFrame* frame);
 };

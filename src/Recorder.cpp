@@ -35,11 +35,15 @@ std::string Recorder::getRecordPath() {
     return path + tmp;
 }
 
-void Recorder::startRecord(const std::string &resolution, int recordFps, const sensor_msgs::CameraInfo& camInfo) {
+void Recorder::startRecord(const std::string &resolution, int recordFps, const sensor_msgs::CameraInfo& _camInfo,
+                           const std::string& _frame_id, const std::string& _camera_name)
+{
     ros::NodeHandle nh("~");
     XmlRpc::XmlRpcValue v;
     now_path = getRecordPath();
-    camMat = ci2cm(camInfo);
+    camInfo = _camInfo;
+    frame_id = _frame_id;
+    camera_name = _camera_name;
     cv::Size size = resolutionSizeCreator(resolution);
     std::vector<int> params{cv::VIDEOWRITER_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY};
     videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size, params);
@@ -62,13 +66,15 @@ void Recorder::stopRecord() {
         auto info = topics[i].getInfo();
         topics[i].close();
         if (!info.md5.empty()) {
-            info.file_path = now_path + "topic_" + std::to_string(i) + ".mbg";
+            info.file_path = "topic_" + std::to_string(i) + ".mbg";
             node["topics"].push_back(info);
         }
     }
     node["video"] = std::string("video") + SUFFIX;
     node["frameCount"] = frame_count;
-    node["cameraMatrix"] = camMat;
+    node["cameraMatrix"] = camInfo;
+    node["frameId"] = frame_id;
+    node["cameraName"] = camera_name;
     topics.clear();
     std::ofstream file(now_path + "info.yaml");
     file << node;

@@ -17,6 +17,18 @@ RosCamera::~RosCamera() {
         isRecord = false;
     }
     camera->Uninit();
+    if (cameraPubThread.joinable()) {
+        cameraPubThread.join();
+    }
+    if (imageGetThread.joinable()) {
+        imageGetThread.join();
+    }
+    if (imagePubThread.joinable()) {
+        imagePubThread.join();
+    }
+    if (imageRecordThread.joinable()) {
+        imageRecordThread.join();
+    }
 }
 
 void RosCamera::expCallback(const std_msgs::Int32ConstPtr& msg) {
@@ -135,8 +147,8 @@ void RosCamera::configCallback(md_camera::CameraConfig &_config, uint32_t _) {
 
 void RosCamera::cameraPubWorker() {
     ros::Rate loopRate(5);
+    std_msgs::String msg;
     while(ros::ok()) {
-        std_msgs::String msg;
         msg.data = internalConfig.CameraName;
         cameraNamePub.publish(msg);
         cameraInfoPub.publish(camInfo);
@@ -319,7 +331,7 @@ void RosCamera::init() {
 }
 
 void RosCamera::startRecord(const string &resolution) {
-    recorder.startRecord(resolution, recordFps, camInfo);
+    recorder.startRecord(resolution, recordFps, camInfo, frame_id, internalConfig.CameraName);
     isRecord = true;
 }
 

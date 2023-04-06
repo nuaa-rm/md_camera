@@ -59,10 +59,25 @@ add_executable(
         src/TopicRecorder.cpp
 )
 
+add_executable(
+        video_pub_node
+        src/videoPubNode.cpp
+        src/cameraMatrix.cpp
+        src/TopicRecorder.cpp
+        src/Player.cpp
+)
+
 target_link_libraries(
         ${PROJECT_NAME}_node
         ${catkin_LIBRARIES}
         ${OpenCV_LIBRAIRES}
         ${YAML_CPP_LIBRARIES}
         MVSDK
+)
+
+target_link_libraries(
+        video_pub_node
+        ${catkin_LIBRARIES}
+        ${OpenCV_LIBRAIRES}
+        ${YAML_CPP_LIBRARIES}
 )
