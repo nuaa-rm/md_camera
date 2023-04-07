@@ -1,7 +1,7 @@
 AutoExp: false
-ExpTime: 1000
-Resolution: MaxSize
-Gain: 100
+ExpTime: 2000
+Resolution: Normal
+Gain: 200
 AutoWB: false
 HWTrigger: false
 Record: false
