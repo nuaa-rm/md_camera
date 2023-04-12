@@ -13,7 +13,7 @@ class LockFrame {
 private:
     uint8_t *memory = nullptr;
     tSdkFrameHead head;
-    std::atomic<bool> used = false;
+    std::atomic<bool> used{false};
 public:
     bool lock();
     void release();

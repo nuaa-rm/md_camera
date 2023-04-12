@@ -16,7 +16,7 @@
 #endif
 
 #ifdef MJPG
-#define FOUR_CC_MJPG cv::VideoWriter::fourcc('M','J','P','G')
+#define FOUR_CC cv::VideoWriter::fourcc('M','J','P','G')
 #define SUFFIX ".avi"
 #endif
 
@@ -45,8 +45,10 @@ void Recorder::startRecord(const std::string &resolution, int recordFps, const s
     frame_rate = recordFps;
     camera_name = _camera_name;
     cv::Size size = resolutionSizeCreator(resolution);
+    // 低版本opencv此处会编译错误，请注释下两行并解除第三行注释
     std::vector<int> params{cv::VIDEOWRITER_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY};
     videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size, params);
+//    videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size);
     auto saveFunc = [this](){
         this->saveYaml();
     };
