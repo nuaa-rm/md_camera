@@ -37,8 +37,8 @@ std::string Recorder::getRecordPath() {
 
 template <typename U>
 struct AccelerationEnable {
-	template <typename T, typename=decltype(T::VIDEOWRITER_PROP_HW_ACCELERATION)>
-	static constexpr bool check(T) { return true; };
+	template <typename T, typename T2 = decltype(T::VIDEOWRITER_PROP_HW_ACCELERATION)>
+	static constexpr bool check(T2) { return true; };
 
     template<typename T>
 	static constexpr bool check(...) { return false; };
@@ -46,10 +46,10 @@ struct AccelerationEnable {
 	static constexpr bool ret = check<U>(0);
 };
 
-template<typename T = cv::VideoWriterProperties>
+template<typename T = cv::VideoWriterProperties, typename T2 = cv::VideoAccelerationType>
 typename std::enable_if<AccelerationEnable<T>::ret, void>::type
 startVideoRecorder(cv::VideoWriter& videoWriter, const std::string& now_path, int recordFps, cv::Size size) {
-    std::vector<int> params{cv::VIDEOWRITER_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY};
+    std::vector<int> params{T::VIDEOWRITER_PROP_HW_ACCELERATION, T2::VIDEO_ACCELERATION_ANY};
     videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size, params);
 }
 
