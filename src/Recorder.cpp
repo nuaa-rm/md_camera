@@ -35,31 +35,6 @@ std::string Recorder::getRecordPath() {
     return path + tmp;
 }
 
-template <typename U>
-struct AccelerationEnable {
-	template <typename T, typename T2 = decltype(T::VIDEOWRITER_PROP_HW_ACCELERATION)>
-	static constexpr bool check(T2) { return true; };
-
-    template<typename T>
-	static constexpr bool check(...) { return false; };
-
-	static constexpr bool ret = check<U>(0);
-};
-
-template<typename T = cv::VideoWriterProperties, typename T2 = cv::VideoAccelerationType>
-typename std::enable_if<AccelerationEnable<T>::ret, void>::type
-startVideoRecorder(cv::VideoWriter& videoWriter, const std::string& now_path, int recordFps, cv::Size size) {
-    std::vector<int> params{T::VIDEOWRITER_PROP_HW_ACCELERATION, T2::VIDEO_ACCELERATION_ANY};
-    videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size, params);
-}
-
-template<typename T = cv::VideoWriterProperties>
-typename std::enable_if<!AccelerationEnable<T>::ret, void>::type
-startVideoRecorder(cv::VideoWriter& videoWriter, const std::string& now_path, int recordFps, cv::Size size) {
-    std::cerr << "Opencv Version not Support Set VideoWriter ACCELERATION!" << std::endl;
-    videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size);
-}
-
 void Recorder::startRecord(const std::string &resolution, int recordFps, const sensor_msgs::CameraInfo& _camInfo,
                            const std::string& _frame_id, const std::string& _camera_name)
 {
@@ -70,7 +45,10 @@ void Recorder::startRecord(const std::string &resolution, int recordFps, const s
     frame_rate = recordFps;
     camera_name = _camera_name;
     cv::Size size = resolutionSizeCreator(resolution);
-    startVideoRecorder(videoWriter, now_path, recordFps, size);
+    // 低版本opencv此处会编译错误，请注释下两行并解除第三行注释
+    std::vector<int> params{cv::VIDEOWRITER_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY};
+    videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size, params);
+//    videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size);
     auto saveFunc = [this](){
         this->saveYaml();
     };
