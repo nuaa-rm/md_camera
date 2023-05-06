@@ -33,6 +33,7 @@ private:
 
     bool isInit = false, isRecord = false;
     int fpsLimit = 0, recordFps = 0;
+    double hwInterval = 0;
     std::shared_ptr<MDCamera> camera = std::make_shared<MDCamera>();
     md_camera::CameraConfig internalConfig;
     sensor_msgs::CameraInfo camInfo;

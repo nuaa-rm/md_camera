@@ -204,6 +204,7 @@ void RosCamera::getImageWorker() {
 
 void RosCamera::publishImageWorker() {
     auto lastImgTime = ros::Time::now();
+    auto dua = ros::Duration(hwInterval);
     while (ros::ok()) {
         if (publishQueue.read_available()) {
             LockFrame* frame;
@@ -214,14 +215,21 @@ void RosCamera::publishImageWorker() {
                 frame->data()
             );
             std_msgs::Header img_head;
-            img_head.stamp = ros::Time::now();
+            ros::Time now = ros::Time::now();
+            if (hwInterval > 0 && abs((now - lastImgTime).toSec() - hwInterval) / hwInterval < 0.1) {
+                img_head.stamp = lastImgTime + dua;
+                lastImgTime = ros::Time::now();
+            } else {
+                img_head.stamp = ros::Time::now();
+                lastImgTime = img_head.stamp;
+                ROS_WARN("Camera frame rate does not match trigger frequency!");
+            }
             img_head.frame_id = frame_id;
             auto msg = cv_bridge::CvImage(img_head, "bgr8", raw_img).toImageMsg();
             if (isRecord && recordQueue.write_available() &&
                 (ros::Time::now() - lastImgTime).toSec() > 1. / (double)recordFps)
             {
                 recordQueue.push(frame);
-                lastImgTime = ros::Time::now();
             } else {
                 frame->release();
             }
@@ -314,8 +322,10 @@ void RosCamera::init() {
 
     if (yamlNode["HWTrigger"].as<bool>()) {
         camera->SetTriggerMode(MDCamera::hardware);
+        hwInterval = 1. / yamlNode["HWFrequency"].as<double>();
     } else {
         camera->SetTriggerMode(MDCamera::continuous);
+        hwInterval = -1;
     }
 
     if (recordOnStart) {
