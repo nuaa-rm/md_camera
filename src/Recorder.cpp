@@ -12,7 +12,7 @@
 
 #ifdef X264
 #define FOUR_CC cv::VideoWriter::fourcc('X','2','6','4')
-#define SUFFIX ".mp4"
+#define SUFFIX ".mkv"
 #endif
 
 #ifdef MJPG
@@ -46,9 +46,9 @@ void Recorder::startRecord(const std::string &resolution, int recordFps, const s
     camera_name = _camera_name;
     cv::Size size = resolutionSizeCreator(resolution);
     // 低版本opencv此处会编译错误，请注释下两行并解除第三行注释
-    std::vector<int> params{cv::VIDEOWRITER_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY};
-    videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size, params);
-//    videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size);
+    //std::vector<int> params{cv::VIDEOWRITER_PROP_HW_ACCELERATION, cv::VIDEO_ACCELERATION_ANY};
+    //videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size, params);
+    videoWriter.open(now_path + "video" + SUFFIX, FOUR_CC, recordFps, size);
     auto saveFunc = [this](){
         this->saveYaml();
     };
@@ -86,7 +86,7 @@ void Recorder::pushRecordFrame(LockFrame *frame) {
     );
     videoWriter.write(raw_img);
     frame_count++;
-    for (auto& topic: topics) {
+    For (auto& topic: topics) {
         topic.setFrameCount(frame_count);
     }
 }

@@ -1,10 +1,10 @@
 AutoExp: false
-ExpTime: 2000
+ExpTime: 5000
 Resolution: Normal
-Gain: 200
+Gain: 100
 AutoWB: false
 HWTrigger: false
 HWFrequency: 150
-Record: false
+Record: true
 FpsLimit: 0
-RecordFps: 160
+RecordFps: 60

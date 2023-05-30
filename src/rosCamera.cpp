@@ -219,7 +219,7 @@ void RosCamera::publishImageWorker() {
             if (hwInterval > 0 && abs((now - lastImgTime).toSec() - hwInterval) / hwInterval < 0.1) {
                 img_head.stamp = lastImgTime + dua;
                 lastImgTime = ros::Time::now();
-            } else {
+            } else if (hwInterval > 0) {
                 img_head.stamp = ros::Time::now();
                 lastImgTime = img_head.stamp;
                 ROS_WARN("Camera frame rate does not match trigger frequency!");

@@ -131,6 +131,7 @@ int MDCamera::LoadParameters(int group) {
     CHECK_RETURN_RETRY(3, CameraLoadParameter(hCamera, group));
     printf("CAMERA SET SATURATION SUCCESS!\n");
     CHECK_RETURN(CameraGetCapability(hCamera, &mCapability));
+    CHECK_RETURN(CameraSetRotate(hCamera, 2));
     return 0;
 }
 

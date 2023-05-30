@@ -67,6 +67,16 @@ add_executable(
         src/Player.cpp
 )
 
+add_dependencies(
+        ${PROJECT_NAME}_node
+        md_camera_gencpp
+)
+
+add_dependencies(
+        video_pub_node
+        md_camera_gencpp
+)
+
 target_link_libraries(
         ${PROJECT_NAME}_node
         ${catkin_LIBRARIES}
