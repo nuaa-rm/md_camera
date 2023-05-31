@@ -86,7 +86,7 @@ void Recorder::pushRecordFrame(LockFrame *frame) {
     );
     videoWriter.write(raw_img);
     frame_count++;
-    For (auto& topic: topics) {
+    for (auto& topic: topics) {
         topic.setFrameCount(frame_count);
     }
 }
